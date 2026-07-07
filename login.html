@@ -1,0 +1,761 @@
+
+
+Advanced login system · HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger &mdash; Secure Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0cce83;
+    --ink-2:#173229;
+    --parchment:#F6F1E4;
+    --parchment-2:#EDE6D3;
+    --brass:#B8862E;
+    --brass-light:#D8AF5C;
+    --pine:#3E5C50;
+    --rust:#A6403A;
+    --text-dark:#8eaa74;
+    --text-muted:#5A6D62;
+    --line:#8bc6c5;
+    --shadow: 0 20px 60px -20px rgba(15,36,28,0.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--ink);
+    color:var(--text-dark);
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .stage{
+    width:100%;
+    max-width:980px;
+    display:grid;
+    grid-template-columns: 1.05fr 1fr;
+    background:var(--parchment);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+    min-height:640px;
+  }
+  /* LEFT: ledger panel */
+  .ledger{
+    background:
+      radial-gradient(circle at 15% 15%, rgba(184,134,46,0.14), transparent 45%),
+      linear-gradient(160deg, var(--ink) 0%, var(--ink-2) 100%);
+    color:var(--parchment);
+    padding:52px 44px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    position:relative;
+    overflow:hidden;
+  }
+  .ledger::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 37px, rgba(246,241,228,0.05) 37px 38px);
+    pointer-events:none;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    position:relative;
+    z-index:1;
+  }
+  .brand-mark{
+    width:38px;height:38px;
+    border:1.5px solid var(--brass-light);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    color:var(--brass-light);
+    font-size:17px;
+  }
+  .brand-name{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    letter-spacing:0.02em;
+  }
+  .ledger-copy{ position:relative; z-index:1; margin-top:56px; }
+  .ledger-copy h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(28px,3.4vw,38px);
+    line-height:1.15;
+    margin:0 0 18px;
+    max-width:360px;
+  }
+  .ledger-copy p{
+    color:#C9CFC7;
+    font-size:14.5px;
+    line-height:1.7;
+    max-width:340px;
+    margin:0;
+  }
+  .ledger-footer{
+    position:relative; z-index:1;
+    display:flex;
+    gap:28px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#8FA096;
+  }
+  .ledger-footer div span{ display:block; color:var(--brass-light); font-size:14px; margin-bottom:2px; font-family:'Fraunces',serif; letter-spacing:0; }
+ 
+  /* Stamp, appears on success */
+  .stamp{
+    position:absolute;
+    top:46%; left:52%;
+    transform: translate(-50%,-50%) rotate(-16deg) scale(0.6);
+    width:190px; height:190px;
+    border-radius:50%;
+    border:3px solid var(--brass-light);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    z-index:2;
+    transition: opacity .35s ease, transform .55s cubic-bezier(.2,1.4,.4,1);
+    pointer-events:none;
+  }
+  .stamp::before{
+    content:"";
+    position:absolute; inset:8px;
+    border:1px dashed rgba(216,175,92,0.6);
+    border-radius:50%;
+  }
+  .stamp.show{ opacity:1; transform: translate(-50%,-50%) rotate(-16deg) scale(1); }
+  .stamp b{
+    font-family:'Fraunces',serif;
+    color:var(--brass-light);
+    font-size:15px;
+    letter-spacing:0.08em;
+  }
+  .stamp span{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--brass-light);
+    font-size:9.5px;
+    letter-spacing:0.14em;
+    margin-top:4px;
+  }
+ 
+  /* RIGHT: form panel */
+  .panel{
+    background:var(--parchment);
+    padding:52px 46px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .panel-head h2{
+    font-family:'Fraunces',serif;
+    font-size:24px;
+    font-weight:600;
+    margin:0 0 6px;
+    color:var(--text-dark);
+  }
+  .panel-head p{
+    margin:0 0 30px;
+    font-size:13.5px;
+    color:var(--text-muted);
+  }
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--pine);
+    margin-bottom:7px;
+  }
+  .input-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+  input[type="email"], input[type="password"], input[type="text"]{
+    width:100%;
+    padding:12px 14px;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    border:1.5px solid var(--line);
+    background:#FFFDF8;
+    border-radius:9px;
+    color:var(--text-dark);
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus{
+    border-color:var(--brass);
+    box-shadow:0 0 0 3px rgba(184,134,46,0.15);
+  }
+  input.invalid{ border-color:var(--rust); }
+  .toggle-eye{
+    position:absolute; right:10px;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-muted);
+    padding:4px;
+    display:flex;
+  }
+  .toggle-eye:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible{
+    outline:2px solid var(--brass); outline-offset:2px;
+  }
+  .error-msg{
+    font-size:12px;
+    color:var(--rust);
+    margin-top:6px;
+    min-height:14px;
+  }
+  .strength{
+    margin-top:9px;
+    display:flex; gap:5px;
+  }
+  .strength i{
+    display:block; height:4px; flex:1;
+    background:var(--line);
+    border-radius:2px;
+    transition: background .2s ease;
+  }
+  .strength-label{
+    font-size:11px;
+    color:var(--text-muted);
+    margin-top:6px;
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.03em;
+  }
+  .row-between{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:4px 0 22px;
+    font-size:13px;
+  }
+  .remember{ display:flex; align-items:center; gap:8px; color:var(--text-muted); }
+  .remember input{ accent-color:var(--brass); width:15px; height:15px; }
+  .link-btn{
+    background:none; border:none; padding:0; cursor:pointer;
+    color:var(--pine); font-size:13px; font-weight:600;
+    text-decoration:underline; text-underline-offset:3px;
+  }
+  .submit-btn{
+    width:100%;
+    padding:13px;
+    background:var(--ink);
+    color:var(--parchment);
+    border:none;
+    border-radius:9px;
+    font-size:14.5px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    letter-spacing:0.01em;
+    transition: background .15s ease, transform .1s ease;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .submit-btn:hover{ background:var(--ink-2); }
+  .submit-btn:active{ transform: scale(0.99); }
+  .submit-btn:disabled{ opacity:0.55; cursor:not-allowed; }
+ 
+  .divider{
+    display:flex; align-items:center; gap:12px;
+    margin:24px 0 18px;
+    color:var(--text-muted);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+  }
+  .divider::before, .divider::after{
+    content:""; flex:1; height:1px; background:var(--line);
+  }
+  .socials{ display:flex; gap:10px; }
+  .social-btn{
+    flex:1;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:10px;
+    border:1.5px solid var(--line);
+    background:#FFFDF8;
+    border-radius:9px;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    color:var(--text-dark);
+  }
+  .social-btn:hover{ border-color:var(--brass); }
+ 
+  .lockout-banner{
+    display:none;
+    background:#F5E6E4;
+    border:1px solid #E3B7B2;
+    color:var(--rust);
+    font-size:12.5px;
+    padding:10px 12px;
+    border-radius:8px;
+    margin-bottom:16px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+ 
+  .footnote{
+    text-align:center;
+    font-size:12.5px;
+    color:var(--text-muted);
+    margin-top:24px;
+  }
+  .footnote a{ color:var(--pine); font-weight:600; text-decoration:none; }
+ 
+  /* OTP step */
+  .otp-row{ display:flex; gap:10px; margin-bottom:8px; }
+  .otp-row input{
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:20px;
+    padding:12px 0;
+  }
+  .hint{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--text-muted);
+    background:var(--parchment-2);
+    border:1px dashed var(--line);
+    padding:8px 10px;
+    border-radius:7px;
+    margin-bottom:18px;
+  }
+ 
+  .step{ display:none; }
+  .step.active{ display:block; animation: fade .3s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+ 
+  .success-view{ display:none; text-align:left; }
+  .success-view.active{ display:block; animation: fade .4s ease; }
+  .success-view .badge{
+    display:inline-flex; align-items:center; gap:8px;
+    background:#E7EFE8; color:var(--pine);
+    font-size:12px; font-weight:600;
+    padding:6px 12px; border-radius:100px;
+    margin-bottom:20px;
+  }
+  .session-card{
+    border:1.5px solid var(--line);
+    background:#FFFDF8;
+    border-radius:10px;
+    padding:16px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--text-muted);
+    line-height:2;
+  }
+  .session-card b{ color:var(--text-dark); }
+ 
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:var(--parchment);
+    padding:11px 18px; border-radius:9px;
+    font-size:13px; opacity:0; transition:opacity .25s ease, transform .25s ease;
+    pointer-events:none; z-index:50;
+    box-shadow:var(--shadow);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+ 
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(15,36,28,0.55);
+    display:none; align-items:center; justify-content:center; z-index:40; padding:16px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background:var(--parchment); border-radius:14px; padding:30px;
+    max-width:380px; width:100%; box-shadow:var(--shadow);
+  }
+  .modal h3{ font-family:'Fraunces',serif; margin:0 0 8px; font-size:19px; }
+  .modal p{ font-size:13.5px; color:var(--text-muted); margin:0 0 18px; line-height:1.6; }
+  .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+  .modal-actions button{ flex:1; }
+  .ghost-btn{
+    background:none; border:1.5px solid var(--line); color:var(--text-dark);
+    padding:11px; border-radius:9px; font-weight:600; cursor:pointer; font-size:13.5px;
+  }
+  .confirm-box{
+    display:none;
+    background:#E7EFE8; border:1px solid #C7DAC9; color:var(--pine);
+    font-size:13px; padding:10px 12px; border-radius:8px; margin-top:14px;
+  }
+  .confirm-box.show{ display:block; }
+ 
+  @media (max-width: 820px){
+    .stage{ grid-template-columns: 1fr; }
+    .ledger{ padding:36px 30px 44px; min-height:220px; }
+    .ledger-copy{ margin-top:26px; }
+    .ledger-footer{ display:none; }
+    .panel{ padding:38px 26px; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="stage">
+  <div class="ledger">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">Ledger</div>
+    </div>
+    <div class="ledger-copy">
+      <h1>Every entry, accounted for.</h1>
+      <p>A verified line of access, kept the way a ledger keeps a transaction &mdash; timestamped, checked twice, never quietly altered.</p>
+    </div>
+    <div class="ledger-footer">
+      <div><span>256-bit</span>Encryption</div>
+      <div><span>2FA</span>Enforced</div>
+      <div><span>24/7</span>Monitored</div>
+    </div>
+    <div class="stamp" id="stamp">
+      <b>VERIFIED</b>
+      <span id="stampTime">00:00:00</span>
+    </div>
+  </div>
+ 
+  <div class="panel">
+ 
+    <!-- STEP 1: credentials -->
+    <div class="step active" id="step-credentials">
+      <div class="panel-head">
+        <h2>Sign in to your vault</h2>
+        <p>Demo credentials &mdash; <b>demo@ledger.io</b> / <b>Passw0rd!23</b></p>
+      </div>
+ 
+      <div class="lockout-banner" id="lockoutBanner"></div>
+ 
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <input type="email" id="email" placeholder="you@company.com" autocomplete="username">
+          </div>
+          <div class="error-msg" id="emailError"></div>
+        </div>
+ 
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+            <button type="button" class="toggle-eye" id="toggleEye" aria-label="Show password">
+              <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="strength" id="strengthBars">
+            <i></i><i></i><i></i><i></i>
+          </div>
+          <div class="strength-label" id="strengthLabel">&nbsp;</div>
+          <div class="error-msg" id="passwordError"></div>
+        </div>
+ 
+        <div class="row-between">
+          <label class="remember"><input type="checkbox" id="remember"> Remember this device</label>
+          <button type="button" class="link-btn" id="forgotBtn">Forgot password?</button>
+        </div>
+ 
+        <button type="submit" class="submit-btn" id="submitBtn">Continue</button>
+      </form>
+ 
+      <div class="divider">or continue with</div>
+      <div class="socials">
+        <button class="social-btn" onclick="toast('Social sign-in isn\'t wired up in this demo')">Google</button>
+        <button class="social-btn" onclick="toast('Social sign-in isn\'t wired up in this demo')">GitHub</button>
+      </div>
+ 
+      <p class="footnote">No account? <a href="#" onclick="event.preventDefault(); toast('Sign-up isn\'t part of this demo')">Request access</a></p>
+    </div>
+ 
+    <!-- STEP 2: 2FA -->
+    <div class="step" id="step-otp">
+      <div class="panel-head">
+        <h2>Verify it's you</h2>
+        <p>Enter the 6-digit code we've sent to your device.</p>
+      </div>
+      <div class="hint">Demo code: <b>123456</b></div>
+      <div class="otp-row" id="otpRow">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+      </div>
+      <div class="error-msg" id="otpError" style="margin-bottom:14px;"></div>
+      <button class="submit-btn" id="otpSubmit">Verify &amp; sign in</button>
+      <p class="footnote"><button class="link-btn" id="backBtn" style="color:var(--text-muted); text-decoration:none;">&larr; Back</button></p>
+    </div>
+ 
+    <!-- STEP 3: success -->
+    <div class="success-view" id="step-success">
+      <span class="badge">&#10003; Access granted</span>
+      <h2 style="font-family:'Fraunces',serif; margin:0 0 6px;">Welcome back.</h2>
+      <p style="color:var(--text-muted); font-size:13.5px; margin:0 0 20px;">Your session has been verified and logged.</p>
+      <div class="session-card">
+        <div><b>Account</b> &nbsp;demo@ledger.io</div>
+        <div><b>Device</b> &nbsp;<span id="sessDevice">this browser</span></div>
+        <div><b>Session</b> &nbsp;<span id="sessId"></span></div>
+        <div><b>Signed in</b> &nbsp;<span id="sessTime"></span></div>
+      </div>
+      <button class="ghost-btn" style="width:100%; margin-top:20px;" id="signOutBtn">Sign out</button>
+    </div>
+ 
+  </div>
+</div>
+ 
+<div class="toast" id="toast"></div>
+ 
+<div class="modal-overlay" id="forgotModal">
+  <div class="modal">
+    <h3>Reset your password</h3>
+    <p>Enter the email on your account and we'll send a reset link.</p>
+    <input type="email" id="resetEmail" placeholder="you@company.com" style="margin-bottom:6px;">
+    <div class="error-msg" id="resetError"></div>
+    <div class="confirm-box" id="resetConfirm">Reset link sent &mdash; check your inbox.</div>
+    <div class="modal-actions">
+      <button class="ghost-btn" id="closeModal">Cancel</button>
+      <button class="submit-btn" id="sendReset">Send link</button>
+    </div>
+  </div>
+</div>
+ 
+<script>
+(function(){
+  const DEMO_EMAIL = 'demo@ledger.io';
+  const DEMO_PASSWORD = 'Passw0rd!23';
+  const DEMO_OTP = '123456';
+  const MAX_ATTEMPTS = 3;
+  const LOCKOUT_SECONDS = 30;
+ 
+  let failedAttempts = 0;
+  let lockedUntil = null;
+  let lockoutTimer = null;
+ 
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const emailError = document.getElementById('emailError');
+  const passwordError = document.getElementById('passwordError');
+  const form = document.getElementById('loginForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const lockoutBanner = document.getElementById('lockoutBanner');
+  const toastEl = document.getElementById('toast');
+ 
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(()=> toastEl.classList.remove('show'), 2600);
+  }
+  window.toast = toast;
+ 
+  function emailValid(v){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+ 
+  // Password strength
+  const bars = document.querySelectorAll('#strengthBars i');
+  const strengthLabel = document.getElementById('strengthLabel');
+  const colors = ['#A6403A', '#C97A3A', '#B8862E', '#3E5C50'];
+  const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+ 
+  function scorePassword(v){
+    let score = 0;
+    if(v.length >= 8) score++;
+    if(/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+    if(/\d/.test(v)) score++;
+    if(/[^A-Za-z0-9]/.test(v)) score++;
+    return v.length ? Math.max(score,1) : 0;
+  }
+ 
+  passwordInput.addEventListener('input', ()=>{
+    const score = scorePassword(passwordInput.value);
+    bars.forEach((bar, i)=>{
+      bar.style.background = i < score ? colors[score-1] : 'var(--line)';
+    });
+    strengthLabel.textContent = passwordInput.value ? labels[score-1] || '' : '\u00A0';
+    strengthLabel.style.color = score ? colors[score-1] : 'var(--text-muted)';
+    if(passwordInput.classList.contains('invalid') && passwordInput.value) clearFieldError(passwordInput, passwordError);
+  });
+ 
+  // Show/hide password
+  const toggleEye = document.getElementById('toggleEye');
+  const eyeIcon = document.getElementById('eyeIcon');
+  toggleEye.addEventListener('click', ()=>{
+    const showing = passwordInput.type === 'text';
+    passwordInput.type = showing ? 'password' : 'text';
+    toggleEye.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    eyeIcon.innerHTML = showing
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a18.7 18.7 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  });
+ 
+  function setFieldError(input, errEl, msg){
+    input.classList.add('invalid');
+    errEl.textContent = msg;
+  }
+  function clearFieldError(input, errEl){
+    input.classList.remove('invalid');
+    errEl.textContent = '';
+  }
+ 
+  emailInput.addEventListener('input', ()=>{ if(emailInput.classList.contains('invalid')) clearFieldError(emailInput, emailError); });
+ 
+  function startLockout(){
+    lockedUntil = Date.now() + LOCKOUT_SECONDS*1000;
+    submitBtn.disabled = true;
+    lockoutBanner.style.display = 'block';
+    updateLockoutBanner();
+    lockoutTimer = setInterval(()=>{
+      const remaining = Math.ceil((lockedUntil - Date.now())/1000);
+      if(remaining <= 0){
+        clearInterval(lockoutTimer);
+        lockoutBanner.style.display = 'none';
+        submitBtn.disabled = false;
+        failedAttempts = 0;
+      } else {
+        updateLockoutBanner(remaining);
+      }
+    }, 1000);
+  }
+ 
+  function updateLockoutBanner(remaining){
+    const r = remaining ?? Math.ceil((lockedUntil - Date.now())/1000);
+    lockoutBanner.textContent = `Too many failed attempts. Try again in ${r}s.`;
+  }
+ 
+  form.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    if(lockedUntil && Date.now() < lockedUntil) return;
+ 
+    let valid = true;
+    if(!emailValid(emailInput.value.trim())){
+      setFieldError(emailInput, emailError, 'Enter a valid email address.');
+      valid = false;
+    } else {
+      clearFieldError(emailInput, emailError);
+    }
+    if(passwordInput.value.length < 8){
+      setFieldError(passwordInput, passwordError, 'Password must be at least 8 characters.');
+      valid = false;
+    } else {
+      clearFieldError(passwordInput, passwordError);
+    }
+    if(!valid) return;
+ 
+    const correct = emailInput.value.trim().toLowerCase() === DEMO_EMAIL && passwordInput.value === DEMO_PASSWORD;
+ 
+    if(!correct){
+      failedAttempts++;
+      setFieldError(passwordInput, passwordError, `Incorrect email or password. (${failedAttempts}/${MAX_ATTEMPTS} attempts)`);
+      if(failedAttempts >= MAX_ATTEMPTS){
+        startLockout();
+      }
+      return;
+    }
+ 
+    goToStep('otp');
+  });
+ 
+  // Steps
+  function goToStep(name){
+    document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+    document.getElementById('step-'+name).classList.add('active');
+  }
+ 
+  document.getElementById('backBtn').addEventListener('click', ()=> goToStep('credentials'));
+ 
+  // OTP handling
+  const otpInputs = Array.from(document.querySelectorAll('#otpRow input'));
+  otpInputs.forEach((inp, i)=>{
+    inp.addEventListener('input', ()=>{
+      inp.value = inp.value.replace(/[^0-9]/g,'');
+      if(inp.value && i < otpInputs.length-1) otpInputs[i+1].focus();
+    });
+    inp.addEventListener('keydown', (e)=>{
+      if(e.key === 'Backspace' && !inp.value && i > 0) otpInputs[i-1].focus();
+    });
+  });
+ 
+  document.getElementById('otpSubmit').addEventListener('click', ()=>{
+    const code = otpInputs.map(i=>i.value).join('');
+    const otpError = document.getElementById('otpError');
+    if(code.length < 6){
+      otpError.textContent = 'Enter all 6 digits.';
+      return;
+    }
+    if(code !== DEMO_OTP){
+      otpError.textContent = 'Incorrect code. Try 123456 for this demo.';
+      otpInputs.forEach(i=>i.classList.add('invalid'));
+      return;
+    }
+    otpError.textContent = '';
+    completeLogin();
+  });
+ 
+  function completeLogin(){
+    goToStep('credentials'); // reset underlying state visually not needed
+    document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+    document.getElementById('step-success').classList.add('active');
+ 
+    const stamp = document.getElementById('stamp');
+    const now = new Date();
+    document.getElementById('stampTime').textContent = now.toLocaleTimeString();
+    stamp.classList.add('show');
+ 
+    document.getElementById('sessId').textContent = 'sx-' + Math.random().toString(36).slice(2,10);
+    document.getElementById('sessTime').textContent = now.toLocaleString();
+    document.getElementById('sessDevice').textContent = navigator.platform || 'this browser';
+  }
+ 
+  document.getElementById('signOutBtn').addEventListener('click', ()=>{
+    document.querySelectorAll('.step, .success-view').forEach(s=>s.classList.remove('active'));
+    document.getElementById('step-success').classList.remove('active');
+    document.getElementById('step-credentials').classList.add('active');
+    document.getElementById('stamp').classList.remove('show');
+    form.reset();
+    otpInputs.forEach(i=>{ i.value=''; i.classList.remove('invalid'); });
+    bars.forEach(b=> b.style.background = 'var(--line)');
+    strengthLabel.textContent = '\u00A0';
+    toast('Signed out');
+  });
+ 
+  // Forgot password modal
+  const forgotModal = document.getElementById('forgotModal');
+  document.getElementById('forgotBtn').addEventListener('click', ()=> forgotModal.classList.add('show'));
+  document.getElementById('closeModal').addEventListener('click', ()=> {
+    forgotModal.classList.remove('show');
+    document.getElementById('resetConfirm').classList.remove('show');
+    document.getElementById('resetEmail').value = '';
+    document.getElementById('resetError').textContent = '';
+  });
+  document.getElementById('sendReset').addEventListener('click', ()=>{
+    const v = document.getElementById('resetEmail').value.trim();
+    const err = document.getElementById('resetError');
+    if(!emailValid(v)){
+      err.textContent = 'Enter a valid email address.';
+      return;
+    }
+    err.textContent = '';
+    document.getElementById('resetConfirm').classList.add('show');
+  });
+  forgotModal.addEventListener('click', (e)=>{ if(e.target === forgotModal) forgotModal.classList.remove('show'); });
+ 
+})();
+</script>
+ 
+</body>
+</html>
+ 
